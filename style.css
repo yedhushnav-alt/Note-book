@@ -1,0 +1,340 @@
+:root {
+    --primary-color: #2563eb;
+    --bg-color: #f3f4f6;
+    --surface-color: #ffffff;
+    --text-color: #1f2937;
+    --toolbar-bg: rgba(255, 255, 255, 0.95);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: none;
+    /* Hide default cursor to use custom one */
+}
+
+/* Custom Cursor */
+#cursor-circle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    display: none;
+    /* Hidden until moved */
+    transition: width 0.1s, height 0.1s;
+}
+
+/* --- UI Header --- */
+header {
+    height: 60px;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 50;
+    /* Restore cursor for UI elements */
+    cursor: auto;
+}
+
+.header-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.icon-btn:active {
+    background: #e5e7eb;
+}
+
+.icon-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* --- Canvas Area --- */
+#workspace {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    /* Allow scrolling if paper is big */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #d1d5db;
+    /* Darker bg to distinguish paper */
+    touch-action: none;
+    /* Let JS handle touches */
+    cursor: none;
+    /* Ensure cursor is hidden in workspace */
+}
+
+/* The Paper */
+.paper-container {
+    background: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    margin: 20px;
+    /* Spacing from edges */
+    transition: width 0.3s, height 0.3s;
+}
+
+canvas {
+    display: block;
+    cursor: none;
+    /* Hide default here too */
+}
+
+/* --- Floating Toolbar (Bottom) --- */
+.toolbar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 99px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    width: 90%;
+    max-width: 450px;
+    justify-content: space-between;
+    cursor: auto;
+    /* Show pointer for tools */
+}
+
+/* Size Bar */
+.size-bar {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    border-radius: 99px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    width: 200px;
+    cursor: auto;
+}
+
+/* Make sure UI elements show normal cursor */
+button,
+input,
+.modal,
+.popup-menu {
+    cursor: auto;
+}
+
+.tool-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tool-btn.active {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+}
+
+/* Style for Size/Color pickers */
+.popup-menu {
+    position: absolute;
+    bottom: 70px;
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    display: none;
+    /* Hidden by default */
+    flex-direction: column;
+    gap: 12px;
+    width: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 101;
+}
+
+.popup-menu.show {
+    display: flex;
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* Range Slider Styling */
+input[type=range] {
+    width: 100%;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+/* Color options */
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.color-opt {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.color-opt.selected {
+    border-color: var(--text-color);
+    transform: scale(1.1);
+}
+
+/* Modal for Resize/Settings */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+    cursor: auto;
+}
+
+.modal {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal h3 {
+    margin-top: 0;
+}
+
+.modal-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+}
+
+.modal-btn:active {
+    background: #f3f4f6;
+}
+
+.modal-close {
+    margin-top: 16px;
+    background: #f3f4f6;
+    text-align: center;
+}
+
+/* SVG Icons fill */
+svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+/* Grid Background Pattern */
+.bg-grid {
+    background-image:
+        linear-gradient(#e5e7eb 1px, transparent 1px),
+        linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.bg-lines {
+    background-image: repeating-linear-gradient(white 0px, white 24px, #e5e7eb 25px);
+}
+
+.bg-dots {
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+}
